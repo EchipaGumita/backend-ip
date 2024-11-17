@@ -39,7 +39,7 @@ Handling exam schedules manually can be chaotic, prone to errors, and inefficien
 
 1. **Clone the Repository:**  
    ```bash
-   git clone https://github.com/StynlFear/Exam-Scheduler
+   git clone https://github.com/EchipaGumita/backend-ip/tree/main
 2. **Clone the Repository:**  
    ```bash
     npm install
@@ -47,4 +47,4 @@ Handling exam schedules manually can be chaotic, prone to errors, and inefficien
 
 4.**Run the server:**  
   ```bash
-  npm start
+  node app.js
