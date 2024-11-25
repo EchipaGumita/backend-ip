@@ -1,14 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { createExamRequest, getExamRequests, getAllExamRequests } = require('../controllers/examRequestController');
+const examRequestController = require('../controllers/examRequestController');
 
 // Create a new exam request
-router.post('/exam-requests', createExamRequest);
+router.post('/', examRequestController.createExamRequest);
 
-// Get all exam requests for a specific student
-router.get('/exam-requests/student/:student_id', getExamRequests);
+// Approve or deny an exam request
+router.put('/:requestId', examRequestController.handleExamRequest);
 
-// Optional: Get all exam requests (for admin)
-router.get('/exam-requests', getAllExamRequests);
+// Get all exam requests
+router.get('/', examRequestController.getAllExamRequests);
 
+// Get exam requests by specific criteria (e.g., faculty, group, date)
+router.get('/filter', examRequestController.getExamRequestsByFilter);
 module.exports = router;

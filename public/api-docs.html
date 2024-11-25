@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .route {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-left: 4px solid #007BFF;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .route h3 {
+            margin: 0;
+            color: #007BFF;
+        }
+        .example {
+            background: #eee;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        pre {
+            margin: 0;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>API Documentation</h1>
+        <p>Below are the API routes for the project along with example requests. You can copy and paste them as needed.</p>
+        
+        <!-- Example Route -->
+        <div class="route">
+            <h3>Get All Exam Requests</h3>
+            <p><strong>Method:</strong> GET</p>
+            <p><strong>URL:</strong> <code>/exam-requests</code></p>
+            <p><strong>Description:</strong> Fetch all exam requests with their details.</p>
+            <div class="example">
+                <h4>Example:</h4>
+                <pre>curl -X GET http://localhost:5000/exam-requests</pre>
+                <button onclick="copyText('curl -X GET http://localhost:5000/exam-requests')">Copy</button>
+            </div>
+        </div>
+
+        <div class="route">
+            <h3>Create Exam Request</h3>
+            <p><strong>Method:</strong> POST</p>
+            <p><strong>URL:</strong> <code>/exam-requests</code></p>
+            <p><strong>Description:</strong> Create a new exam request.</p>
+            <div class="example">
+                <h4>Example:</h4>
+                <pre>
+curl -X POST http://localhost:5000/exam-requests \
+-H "Content-Type: application/json" \
+-d '{
+    "studentUniqueId": "12345",
+    "subject": "Math",
+    "examDate": "2024-12-01",
+    "examDuration": 90,
+    "classroom": "64a0f87595d09c5e648eeb32",
+    "hour": "10:00",
+    "mainProfessor": "64a0f87595d09c5e648eeb33",
+    "secondaryProfessor": "64a0f87595d09c5e648eeb34",
+    "faculty": "Computer Science",
+    "group": "64a0f87595d09c5e648eeb35"
+}'
+                </pre>
+                <button onclick="copyText('curl -X POST http://localhost:5000/exam-requests -H &quot;Content-Type: application/json&quot; -d {&quot;studentUniqueId&quot;:&quot;12345&quot;,&quot;subject&quot;:&quot;Math&quot;,&quot;examDate&quot;:&quot;2024-12-01&quot;,&quot;examDuration&quot;:90,&quot;classroom&quot;:&quot;64a0f87595d09c5e648eeb32&quot;,&quot;hour&quot;:&quot;10:00&quot;,&quot;mainProfessor&quot;:&quot;64a0f87595d09c5e648eeb33&quot;,&quot;secondaryProfessor&quot;:&quot;64a0f87595d09c5e648eeb34&quot;,&quot;faculty&quot;:&quot;Computer Science&quot;,&quot;group&quot;:&quot;64a0f87595d09c5e648eeb35&quot;}')">Copy</button>
+            </div>
+        </div>
+
+        <!-- Add more routes as needed -->
+    </div>
+
+    <script>
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+    </script>
+</body>
+</html>

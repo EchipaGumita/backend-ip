@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
 
-const subgroupSchema = new mongoose.Schema({
-    subgroup_id: { type: String, unique: true },
-    subgroup_name: { type: String, required: true },
-    students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: false }], // Reference to Student model
-}, { timestamps: true });
+// Define the SubGroup schema
+const subGroupSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    students: [{ type: String }]  // List of students' uniqueIds (not required during creation)
+}, { timestamps: true });  // Optional: add timestamps for createdAt and updatedAt
 
-module.exports = mongoose.model('Subgroup', subgroupSchema);
+// Create and export the SubGroup model
+module.exports = mongoose.model('SubGroup', subGroupSchema);

@@ -1,26 +1,18 @@
 const mongoose = require('mongoose');
 
 const examRequestSchema = new mongoose.Schema({
-    student_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'Student' // Assuming you have a Student model
-    },
-    exam_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'Exam' // Reference to the Exam model
-    },
-    request_date: {
-        type: Date,
-        default: Date.now
-    },
-    status: {
-        type: String,
-        enum: ['pending', 'approved', 'rejected'],
-        default: 'pending'
-    },
-    comments: String // Optional comments from the professor or admin
-});
+    studentUniqueId: { type: String, required: true, unique: true },
+    subject: { type: String, required: true },
+    examDate: { type: Date, required: true },  // Ensure it's Date, not String
+    examDuration: { type: Number, required: true },  // Ensure it's Number
+    classroom: { type: mongoose.Schema.Types.ObjectId, ref: 'Classroom', required: true },
+    hour: { type: String, required: true },
+    mainProfessor: { type: mongoose.Schema.Types.ObjectId, ref: 'Professor', required: true },
+    secondaryProfessor: { type: mongoose.Schema.Types.ObjectId, ref: 'Professor' },
+    faculty: { type: String, required: true },
+    group: { type: mongoose.Schema.Types.ObjectId, ref: 'Group', required: true },
+    approved: { type: Boolean, default: false },
+    reason: { type: String, default: '' },
+}, { timestamps: true });
 
 module.exports = mongoose.model('ExamRequest', examRequestSchema);

@@ -1,142 +1,242 @@
 const Student = require('../models/student');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const { generateJWT } = require('../utils/jwtUtil'); 
 // Create a new student
-const createStudent = async (req, res) => {
+exports.createStudent = async (req, res) => {
     try {
-        const student = new Student(req.body);
-        await student.save();
-        res.status(201).json(student);
+        const studentData = req.body;
+        const newStudent = new Student(studentData);
+        await newStudent.save();
+        res.status(201).json({ message: 'Student created successfully', student: newStudent });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ message: 'Error creating student', error: error.message });
     }
 };
 
-// Get all students
-const getStudents = async (req, res) => {
+// Update an existing student
+exports.updateStudent = async (req, res) => {
+    try {
+        const uniqueId = req.params.uniqueId;
+        const updates = req.body;
+
+        // If password is in updates, hash it before saving
+        if (updates.password) {
+            const salt = await bcrypt.genSalt(10);
+            updates.password = await bcrypt.hash(updates.password, salt);
+        }
+
+        const updatedStudent = await Student.findOneAndUpdate({ uniqueId }, updates, { new: true });
+
+        if (!updatedStudent) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+        res.status(200).json({ message: 'Student updated successfully', student: updatedStudent });
+    } catch (error) {
+        res.status(400).json({ message: 'Error updating student', error: error.message });
+    }
+};
+
+// Delete a student
+exports.deleteStudent = async (req, res) => {
+    try {
+        const uniqueId = req.params.uniqueId;
+        const deletedStudent = await Student.findOneAndDelete({ uniqueId });
+
+        if (!deletedStudent) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+        res.status(200).json({ message: 'Student deleted successfully' });
+    } catch (error) {
+        res.status(400).json({ message: 'Error deleting student', error: error.message });
+    }
+};
+exports.getAllStudents = async (req, res) => {
     try {
         const students = await Student.find();
         res.status(200).json(students);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: 'Error retrieving students', error: error.message });
     }
 };
 
-// Register a new student
-const registerStudent = async (req, res) => {
+// Get a specific student by uniqueId
+exports.getStudentByUniqueId = async (req, res) => {
     try {
-        const { student_id, first_name, last_name, email, password, year, faculty, major, group_id, subgroup_id } = req.body;
-        
-        // Hash the password before saving it
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const student = new Student({
-            student_id,
-            first_name,
-            last_name,
-            email,
-            password: hashedPassword,
-            year,
-            faculty,
-            major,
-            group_id,
-            subgroup_id
-        });
-
-        await student.save();
-        res.status(201).json({ message: "Student registered successfully" });
+        const uniqueId = req.params.uniqueId;
+        const student = await Student.findOne({ uniqueId });
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+        res.status(200).json(student);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ message: 'Error retrieving student', error: error.message });
     }
 };
 
-// Login for a student
-const loginStudent = async (req, res) => {
+// Update the password of a student
+exports.updateStudentPassword = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const student = await Student.findOne({ email });
+        const uniqueId = req.params.uniqueId;
+        const { password } = req.body;
 
-        if (!student || !(await bcrypt.compare(password, student.password))) {
-            return res.status(401).json({ message: "Invalid credentials" });
+        if (!password) {
+            return res.status(400).json({ message: 'Password is required' });
         }
 
-        // Generate JWT token
-        const token = jwt.sign(
-            { id: student._id, student_id: student.student_id },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const updatedStudent = await Student.findOneAndUpdate(
+            { uniqueId },
+            { password: hashedPassword },
+            { new: true }
         );
 
-        res.status(200).json({ message: "Login successful", token });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-// Assign student to a group
-const assignStudentToGroup = async (req, res) => {
-    try {
-        const { student_id, group_id } = req.body;
-
-        const student = await Student.findById(student_id);
-        if (!student) {
+        if (!updatedStudent) {
             return res.status(404).json({ message: 'Student not found' });
         }
-
-        student.group_id = group_id; // Assign group ID
-        await student.save();
-
-        res.status(200).json({ message: 'Student assigned to group successfully', student });
+        res.status(200).json({ message: 'Password updated successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: 'Error updating password', error: error.message });
     }
 };
 
-// Assign student to a subgroup
-const assignStudentToSubgroup = async (req, res) => {
-    try {
-        const { student_id, subgroup_id } = req.body;
 
-        const student = await Student.findById(student_id);
-        if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
+// Find students by a specific characteristic (e.g., faculty, major, year)
+
+exports.findStudentsByFaculty = async (req, res) => {
+    try {
+        const { faculty } = req.body;  // Accessing the parameter from the body
+        const query = {};
+
+        if (faculty) query.faculty = faculty;  // Exact match for faculty
+
+        console.log("Constructed query for faculty:", query);  // Log the query for debugging
+
+        const students = await Student.find(query);
+
+        if (students.length === 0) {
+            return res.status(404).json({ message: 'No students found for the given faculty' });
         }
 
-        student.subgroup_id = subgroup_id; // Assign subgroup ID
-        await student.save();
-
-        res.status(200).json({ message: 'Student assigned to subgroup successfully', student });
+        res.status(200).json(students);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.log("Error:", error);  // Log any error
+        res.status(400).json({ message: 'Error retrieving students by faculty', error: error.message });
     }
 };
 
-// Assign student to a course
-const assignStudentToCourse = async (req, res) => {
+// Find students by Major (from the request body)
+exports.findStudentsByMajor = async (req, res) => {
     try {
-        const { student_id, course_id, course_name } = req.body;
+        const { major } = req.body;  // Accessing the parameter from the body
+        const query = {};
 
-        const student = await Student.findById(student_id);
-        if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
+        if (major) query.major = major;  // Exact match for major
+
+        console.log("Constructed query for major:", query);  // Log the query for debugging
+
+        const students = await Student.find(query);
+
+        if (students.length === 0) {
+            return res.status(404).json({ message: 'No students found for the given major' });
         }
 
-        // Push the course into the courses array
-        student.courses.push({ course_id, course_name });
-        await student.save();
-
-        res.status(200).json({ message: 'Student assigned to course successfully', student });
+        res.status(200).json(students);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.log("Error:", error);  // Log any error
+        res.status(400).json({ message: 'Error retrieving students by major', error: error.message });
     }
 };
 
-module.exports = {
-    createStudent,
-    getStudents,
-    registerStudent,
-    loginStudent,
-    assignStudentToGroup,
-    assignStudentToSubgroup,
-    assignStudentToCourse,
+// Find students by Year (from the request body)
+exports.findStudentsByYear = async (req, res) => {
+    try {
+        const { year } = req.body;  // Accessing the parameter from the body
+        const query = {};
+
+        if (year) query.year = year;  // Exact match for year
+
+        console.log("Constructed query for year:", query);  // Log the query for debugging
+
+        const students = await Student.find(query);
+
+        if (students.length === 0) {
+            return res.status(404).json({ message: 'No students found for the given year' });
+        }
+
+        res.status(200).json(students);
+    } catch (error) {
+        console.log("Error:", error);  // Log any error
+        res.status(400).json({ message: 'Error retrieving students by year', error: error.message });
+    }
 };
+// Find students by Faculty
+exports.findStudentsByFaculty = async (req, res) => {
+    try {
+        const { faculty } = req.query;
+        const query = {};
+
+        if (faculty) query.faculty = faculty;  // Exact match for faculty
+
+        console.log("Constructed query for faculty:", query);  // Log the query for debugging
+
+        const students = await Student.find(query);
+
+        if (students.length === 0) {
+            return res.status(404).json({ message: 'No students found for the given faculty' });
+        }
+
+        res.status(200).json(students);
+    } catch (error) {
+        console.log("Error:", error);  // Log any error
+        res.status(400).json({ message: 'Error retrieving students by faculty', error: error.message });
+    }
+};
+
+// Find students by Major
+exports.findStudentsByMajor = async (req, res) => {
+    try {
+        const { major } = req.query;
+        const query = {};
+
+        if (major) query.major = major;  // Exact match for major
+
+        console.log("Constructed query for major:", query);  // Log the query for debugging
+
+        const students = await Student.find(query);
+
+        if (students.length === 0) {
+            return res.status(404).json({ message: 'No students found for the given major' });
+        }
+
+        res.status(200).json(students);
+    } catch (error) {
+        console.log("Error:", error);  // Log any error
+        res.status(400).json({ message: 'Error retrieving students by major', error: error.message });
+    }
+};
+
+// Find students by Year
+exports.findStudentsByYear = async (req, res) => {
+    try {
+        const { year } = req.query;
+        const query = {};
+
+        if (year) query.year = year;  // Exact match for year
+
+        console.log("Constructed query for year:", query);  // Log the query for debugging
+
+        const students = await Student.find(query);
+
+        if (students.length === 0) {
+            return res.status(404).json({ message: 'No students found for the given year' });
+        }
+
+        res.status(200).json(students);
+    } catch (error) {
+        console.log("Error:", error);  // Log any error
+        res.status(400).json({ message: 'Error retrieving students by year', error: error.message });
+    }
+};
+

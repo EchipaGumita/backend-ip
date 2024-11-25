@@ -1,34 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const {
-    createStudent,
-    getStudents,
-    registerStudent,
-    loginStudent,
-    assignStudentToGroup,
-    assignStudentToSubgroup,
-    assignStudentToCourse
-} = require('../controllers/studentController');
+const studentController = require('../controllers/studentController');
 
-// Create a new student
-router.post('/students', createStudent);
-
-// Get all students
-router.get('/students', getStudents);
-
-// Register a new student
-router.post('/auth/students/register', registerStudent);
-
-// Login for a student
-router.post('/auth/students/login', loginStudent);
-
-// Assign student to a group
-router.put('/students/assign-group', assignStudentToGroup);
-
-// Assign student to a subgroup
-router.put('/students/assign-subgroup', assignStudentToSubgroup);
-
-// Assign student to a course
-router.put('/students/assign-course', assignStudentToCourse);
+router.post('/', studentController.createStudent);
+router.get('/', studentController.getAllStudents);
+router.get('/:uniqueId', studentController.getStudentByUniqueId);
+router.put('/:uniqueId/password', studentController.updateStudentPassword);
+router.put('/:uniqueId', studentController.updateStudent);
+router.delete('/:uniqueId', studentController.deleteStudent);
+router.get('/find/faculty', studentController.findStudentsByFaculty);
+router.get('/find/major', studentController.findStudentsByMajor);
+router.get('/find/year', studentController.findStudentsByYear);
 
 module.exports = router;

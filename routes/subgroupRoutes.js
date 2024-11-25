@@ -1,14 +1,26 @@
 const express = require('express');
 const router = express.Router();
-const { addStudentToSubgroup, getStudentsInSubgroup, createSubgroup } = require('../controllers/subgroupController');
+const subGroupController = require('../controllers/subGroupController');
 
-// Create a new subgroup
-router.post('/subgroups', createSubgroup); // Add this line
+// Route to create a new SubGroup
+router.post('/', subGroupController.createSubGroup);
 
-// Add a student to a subgroup
-router.post('/groups/:groupId/subgroups/:subgroupId/students', addStudentToSubgroup);
+// Route to add students to an existing SubGroup
+router.post('/add-students', subGroupController.addStudentsToSubGroup);
 
-// Get all students in a subgroup
-router.get('/groups/:groupId/subgroups/:subgroupId/students', getStudentsInSubgroup);
+// Route to get all SubGroups
+router.get('/', subGroupController.getAllSubGroups);
+
+// Route to get a SubGroup by name
+router.get('/:name', subGroupController.getSubGroupByName);
+
+// Route to delete a SubGroup by ID
+router.delete('/:subGroupId', subGroupController.deleteSubGroup);
+
+// Route to delete a student from a SubGroup
+router.post('/delete-student', subGroupController.deleteStudentFromSubGroup);
+
+// Route to edit a SubGroup
+router.put('/edit/:subGroupId', subGroupController.editSubGroup);
 
 module.exports = router;

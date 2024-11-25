@@ -1,70 +1,120 @@
-const Subgroup = require('../models/subgroup'); // Import the updated Subgroup model
-const Group = require('../models/group'); // Import the Group model if needed for validation
+const SubGroup = require('../models/subGroup');
 
-// Create a new subgroup
-const createSubgroup = async (req, res) => {
+exports.createSubGroup = async (req, res) => {
     try {
-        const { subgroup_id, subgroup_name, students } = req.body; // Expect these fields in the request body
-
-        // Create a new Subgroup instance
-        const subgroup = new Subgroup({
-            subgroup_id,
-            subgroup_name,
-            students
-        });
-
-        // Save the subgroup to the database
-        await subgroup.save();
-
-        // Return the created subgroup
-        res.status(201).json(subgroup);
+        const { name } = req.body;
+        const newSubGroup = new SubGroup({ name });
+        await newSubGroup.save();
+        res.status(201).json({ message: 'SubGroup created successfully', subGroup: newSubGroup });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ message: 'Error creating SubGroup', error: error.message });
     }
 };
 
-// Add a student to a subgroup
-const addStudentToSubgroup = async (req, res) => {
+exports.addStudentsToSubGroup = async (req, res) => {
     try {
-        const { subgroupId } = req.params;
-        const { student } = req.body; // Expecting the student object ID in the request body
-
-        // Find the subgroup by its ID
-        const subgroup = await Subgroup.findById(subgroupId);
-        if (!subgroup) {
-            return res.status(404).json({ message: 'Subgroup not found' });
+        const { subGroupId, studentUniqueIds } = req.body;
+        const subGroup = await SubGroup.findById(subGroupId);
+        
+        if (!subGroup) {
+            return res.status(404).json({ message: 'SubGroup not found' });
         }
 
-        // Check if the student already exists in the subgroup
-        if (subgroup.students.includes(student)) {
-            return res.status(400).json({ message: 'Student already in subgroup' });
+        // Filter out students who are already in the subgroup
+        const newStudents = studentUniqueIds.filter(studentUniqueId => 
+            !subGroup.students.includes(studentUniqueId)
+        );
+
+        if (newStudents.length === 0) {
+            return res.status(400).json({ message: 'All students are already in the SubGroup' });
         }
 
-        // Add the student to the subgroup's students array
-        subgroup.students.push(student);
-        await subgroup.save();
+        // Add only the new students to the subgroup
+        subGroup.students.push(...newStudents);
+        await subGroup.save();
 
-        res.status(200).json(subgroup);
+        res.status(200).json({ message: 'Students added to SubGroup', subGroup });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ message: 'Error adding students', error: error.message });
     }
 };
 
-// Get all students in a subgroup
-const getStudentsInSubgroup = async (req, res) => {
+
+exports.getAllSubGroups = async (req, res) => {
+  try {
+    const subGroups = await SubGroup.find();
+    res.status(200).json({ subGroups });
+  } catch (error) {
+    res.status(400).json({ message: 'Error fetching subgroups', error: error.message });
+  }
+};
+
+exports.getSubGroupByName = async (req, res) => {
+  try {
+    const { name } = req.params;
+    const subGroup = await SubGroup.findOne({ name });
+    if (!subGroup) {
+      return res.status(404).json({ message: 'SubGroup not found' });
+    }
+    res.status(200).json({ subGroup });
+  } catch (error) {
+    res.status(400).json({ message: 'Error fetching SubGroup by name', error: error.message });
+  }
+};
+// Delete a SubGroup by ID
+exports.deleteSubGroup = async (req, res) => {
+    const { subGroupId } = req.params;  // Assume the subGroupId is passed as a parameter
     try {
-        const { subgroupId } = req.params;
-
-        // Find the subgroup by its ID
-        const subgroup = await Subgroup.findById(subgroupId).populate('students'); // Populate to get student details
-        if (!subgroup) {
-            return res.status(404).json({ message: 'Subgroup not found' });
+        const subGroup = await SubGroup.findByIdAndDelete(subGroupId);
+        if (!subGroup) {
+            return res.status(404).json({ message: 'SubGroup not found' });
         }
-
-        res.status(200).json(subgroup.students); // Return the list of student IDs or full student objects
+        res.status(200).json({ message: 'SubGroup deleted successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: 'Error deleting SubGroup', error: error.message });
     }
 };
 
-module.exports = { createSubgroup, addStudentToSubgroup, getStudentsInSubgroup };
+// Edit a SubGroup by ID
+exports.editSubGroup = async (req, res) => {
+    try {
+        const { name } = req.body;
+        const { subGroupId } = req.params;
+
+        // Find the SubGroup by ID
+        const subGroup = await SubGroup.findById(subGroupId);
+        if (!subGroup) {
+            return res.status(404).json({ message: 'SubGroup not found' });
+        }
+
+        // Update the SubGroup name
+        if (name) {
+            subGroup.name = name;
+        }
+
+        await subGroup.save();
+        res.status(200).json({ message: 'SubGroup updated successfully', subGroup });
+    } catch (error) {
+        res.status(400).json({ message: 'Error updating SubGroup', error: error.message });
+    }
+};
+
+exports.deleteStudentFromSubGroup = async (req, res) => {
+    try {
+        const { subGroupId, studentUniqueId } = req.body;
+
+        // Find the SubGroup by ID
+        const subGroup = await SubGroup.findById(subGroupId);
+        if (!subGroup) {
+            return res.status(404).json({ message: 'SubGroup not found' });
+        }
+
+        // Remove the student from the students array
+        subGroup.students = subGroup.students.filter(id => id !== studentUniqueId);
+
+        await subGroup.save();
+        res.status(200).json({ message: 'Student removed from SubGroup', subGroup });
+    } catch (error) {
+        res.status(400).json({ message: 'Error removing student', error: error.message });
+    }
+};

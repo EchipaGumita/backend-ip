@@ -1,19 +1,17 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const passport = require('passport');
-const session = require('express-session');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const mongoose = require('mongoose');
+const path = require('path');
 require('dotenv').config();
 
-const groupRoutes = require('./routes/groupRoutes');
 const studentRoutes = require('./routes/studentRoutes');
-const examRoutes = require('./routes/examRoutes');
+const subgroupRoutes = require('./routes/subGroupRoutes');
+const groupRoutes = require('./routes/groupRoutes'); 
 const professorRoutes = require('./routes/professorRoutes');
-const authRoutes = require('./routes/authRoutes'); // Google OAuth routes
-const examRequestRoutes = require('./routes/examRequestRoutes');
+const authRoutes = require('./routes/authRoutes');
 const classroomRoutes = require('./routes/classroomRoutes');
-const subgroupRoutes = require('./routes/subgroupRoutes');
+const examRoutes = require('./routes/examRoutes');
+const examRequestRoutes = require('./routes/examRequestRoutes');
 const app = express();
 
 // Connect to MongoDB
@@ -23,68 +21,21 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 
 // Middleware setup
 app.use(bodyParser.json());
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true
-}));
-
-// Initialize Passport and session for authentication
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Configure Google OAuth strategy
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "/auth/google/callback"
-  },
-  async (accessToken, refreshToken, profile, done) => {
-    try {
-      let student = await Student.findOne({ email: profile.emails[0].value });
-      if (!student) {
-        student = new Student({
-          student_id: profile.id,
-          first_name: profile.name.givenName,
-          last_name: profile.name.familyName,
-          email: profile.emails[0].value,
-          password: profile.id,
-        });
-        await student.save();
-      }
-      done(null, student);
-    } catch (error) {
-      done(error, null);
-    }
-  }
-));
-
-// Serialize and deserialize student information
-passport.serializeUser((student, done) => {
-  done(null, student.id);
+app.get('/docs', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'api-docs.html'));
 });
-
-passport.deserializeUser(async (id, done) => {
-  try {
-    const student = await Student.findById(id);
-    done(null, student);
-  } catch (error) {
-    done(error, null);
-  }
-});
-
 // Routes setup
-app.use('/api', groupRoutes);
-app.use('/api', studentRoutes);
-app.use('/api', examRoutes);
-app.use('/api', professorRoutes);
-app.use('/api', examRequestRoutes); 
-app.use('/api', authRoutes);
-app.use('/api', classroomRoutes);
-app.use(authRoutes);  // Add this line for Google OAuth routes
-app.use('/api', subgroupRoutes);
+app.use('/api/students', studentRoutes); // Only the student routes
+app.use('/api/subgroup', subgroupRoutes); // Only the subgroup routes
+app.use('/api/groups', groupRoutes); // Only the group routes
+app.use('/api/professor', professorRoutes); // Only the professor routes
+app.use('/api/auth', authRoutes); // Only the auth routes
+app.use('/api/classroom', classroomRoutes); // Only the classroom routes
+app.use('/api/exam', examRoutes); // Only the exam routes
+app.use('/api/exam-request', examRequestRoutes); // Only the exam request routes
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`API Docs available at http://localhost:${PORT}/docs`);
 });

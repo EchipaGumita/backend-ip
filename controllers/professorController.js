@@ -1,50 +1,69 @@
 const Professor = require('../models/professor');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
+const { generateJWT } = require('../utils/jwtUtil');
 
-// Register a new professor
-const registerProfessor = async (req, res) => {
+// Create a new professor
+exports.createProfessor = async (req, res) => {
     try {
-        const { first_name, last_name, email, password, isAdmin } = req.body;
-        const professor = new Professor({ first_name, last_name, email, password, isAdmin });
-        await professor.save();
-        res.status(201).json({ message: "Professor registered successfully" });
+        const professorData = req.body;
+        const newProfessor = new Professor(professorData);
+        await newProfessor.save();
+        res.status(201).json({ message: 'Professor created successfully', professor: newProfessor });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ message: 'Error creating professor', error: error.message });
     }
 };
 
-// Login for a professor
-const loginProfessor = async (req, res) => {
+// Update an existing professor
+exports.updateProfessor = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const professor = await Professor.findOne({ email });
+        const uniqueId = req.params.uniqueId;
+        const updates = req.body;
 
-        if (!professor || !(await bcrypt.compare(password, professor.password))) {
-            return res.status(401).json({ message: "Invalid credentials" });
+        // If password is in updates, hash it before saving
+        if (updates.password) {
+            const salt = await bcrypt.genSalt(10);
+            updates.password = await bcrypt.hash(updates.password, salt);
         }
 
-        // Generate JWT token
-        const token = jwt.sign({ id: professor._id, isAdmin: professor.isAdmin }, process.env.JWT_SECRET, {
-            expiresIn: '1h',
-        });
+        const updatedProfessor = await Professor.findOneAndUpdate({ uniqueId }, updates, { new: true });
 
-        res.status(200).json({ message: "Login successful", token });
+        if (!updatedProfessor) {
+            return res.status(404).json({ message: 'Professor not found' });
+        }
+        res.status(200).json({ message: 'Professor updated successfully', professor: updatedProfessor });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: 'Error updating professor', error: error.message });
     }
 };
 
-// Get all professors (admin only)
-const getProfessors = async (req, res) => {
+// Delete a professor
+exports.deleteProfessor = async (req, res) => {
     try {
-        const professors = await Professor.find();
-        res.status(200).json(professors);
+        const uniqueId = req.params.uniqueId;
+        const deletedProfessor = await Professor.findOneAndDelete({ uniqueId });
+
+        if (!deletedProfessor) {
+            return res.status(404).json({ message: 'Professor not found' });
+        }
+        res.status(200).json({ message: 'Professor deleted successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: 'Error deleting professor', error: error.message });
+    }
+};
+exports.getProfessorByUniqueId = async (req, res) => {
+    try {
+        const uniqueId = req.params.uniqueId;
+        
+        const professor = await Professor.findOne({ uniqueId });
+        
+        if (!professor) {
+            return res.status(404).json({ message: 'Professor not found' });
+        }
+
+        res.status(200).json({ professor });
+    } catch (error) {
+        res.status(400).json({ message: 'Error retrieving professor', error: error.message });
     }
 };
 
-
-module.exports = { registerProfessor, loginProfessor, getProfessors };
