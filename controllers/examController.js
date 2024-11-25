@@ -75,18 +75,30 @@ exports.createExam = async (req, res) => {
 // Edit an existing exam
 exports.updateExam = async (req, res) => {
     try {
-        const { examId } = req.params;
-        const updates = req.body;
-
-        const updatedExam = await Exam.findByIdAndUpdate(examId, updates, { new: true });
-        if (!updatedExam) return res.status(404).json({ message: 'Exam not found' });
-
-        res.status(200).json({ message: 'Exam updated successfully', exam: updatedExam });
+      const { examId } = req.params;
+      const updates = req.body;
+  
+      // Check if we need to update the classroom
+      if (updates.classroom) {
+        // Verify the classroom object ID exists, otherwise return an error
+        if (!mongoose.Types.ObjectId.isValid(updates.classroom)) {
+          return res.status(400).json({ message: 'Invalid classroom ID' });
+        }
+      }
+  
+      // Update the exam with the given updates (this will include the hour and/or classroom)
+      const updatedExam = await Exam.findByIdAndUpdate(examId, updates, { new: true });
+  
+      if (!updatedExam) {
+        return res.status(404).json({ message: 'Exam not found' });
+      }
+  
+      res.status(200).json({ message: 'Exam updated successfully', exam: updatedExam });
     } catch (error) {
-        res.status(400).json({ message: 'Error updating exam', error: error.message });
+      res.status(400).json({ message: 'Error updating exam', error: error.message });
     }
-};
-
+  };
+  
 // Delete an exam
 exports.deleteExam = async (req, res) => {
     try {
@@ -104,18 +116,31 @@ exports.deleteExam = async (req, res) => {
 // Get all exams
 exports.getAllExams = async (req, res) => {
     try {
-        const exams = await Exam.find().populate('mainProfessor secondaryProfessor classroom');
+        const exams = await Exam.find().populate('mainProfessor secondaryProfessor group classroom');
         res.status(200).json({ exams });
     } catch (error) {
         res.status(400).json({ message: 'Error fetching exams', error: error.message });
     }
 };
+//Get exams by its id 
+exports.getExamById = async (req, res) => {
+    try {
+        const { examId } = req.params;
+
+        const exam = await Exam.findById(examId).populate('mainProfessor secondaryProfessor group classroom');
+        if (!exam) return res.status(404).json({ message: 'Exam not found' });
+
+        res.status(200).json({ exam });
+    } catch (error) {
+        res.status(400).json({ message: 'Error fetching exam', error: error.message });
+    }
+}
 
 // Get exams by specific criteria
 exports.getExamsByCriteria = async (req, res) => {
     try {
         const { faculty, group, date } = req.query;
-        const exams = await Exam.find({ faculty, group, date }).populate('mainProfessor secondaryProfessor classroom');
+        const exams = await Exam.find({ faculty, group, date }).populate('mainProfessor secondaryProfessor group classroom');
 
         if (exams.length === 0) {
             return res.status(404).json({ message: 'No exams found for the given criteria' });

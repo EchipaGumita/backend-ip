@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const path = require('path');
+const cors = require('cors');
 require('dotenv').config();
 
 const studentRoutes = require('./routes/studentRoutes');
@@ -13,12 +14,22 @@ const classroomRoutes = require('./routes/classroomRoutes');
 const examRoutes = require('./routes/examRoutes');
 const examRequestRoutes = require('./routes/examRequestRoutes');
 const app = express();
-
+app.use(cors({
+    origin: 'http://localhost:5173', // Allow requests from the frontend
+    methods: 'GET, POST, PUT, DELETE', // Allow specific methods
+    allowedHeaders: 'Content-Type, Authorization', // Allow custom headers
+    credentials: true, // If you need credentials (cookies, authorization headers)
+}));
+app.options('*', cors()); // Enable pre-flight
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log("MongoDB connected"))
-    .catch((error) => console.log("MongoDB connection error:", error));
-
+   .then(() => {
+       console.log("MongoDB connected");
+   })
+   .catch((error) => {
+       console.error("MongoDB connection error:", error);
+       process.exit(1); // Exit process with failure
+   });
 // Middleware setup
 app.use(bodyParser.json());
 app.get('/docs', (req, res) => {

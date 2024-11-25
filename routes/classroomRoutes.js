@@ -4,14 +4,15 @@ const classroomController = require('../controllers/classroomController');
 const { authenticateJWT } = require('../middleware/auth');
 
 // Create a new classroom (requires JWT authentication)
-router.post('/', authenticateJWT, classroomController.createClassroom);
+router.post('/', classroomController.createClassroom);
 
 // Edit an existing classroom (requires JWT authentication)
-router.put('/:classroomId', authenticateJWT, classroomController.updateClassroom);
+router.put('/:classroomId', classroomController.updateClassroom);
 
 // Delete a classroom (requires JWT authentication)
-router.delete('/:classroomId', authenticateJWT, classroomController.deleteClassroom);
-
+router.delete('/:classroomId', classroomController.deleteClassroom);
+// Get all classrooms (requires JWT authentication)
+router.get('/',  classroomController.getAllClassrooms);
 // Get all booked dates for a specific classroom (no authentication needed)
 router.get('/:classroomId/booked-dates', classroomController.getAllBookedDates);
 

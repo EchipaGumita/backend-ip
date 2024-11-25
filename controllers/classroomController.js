@@ -44,7 +44,15 @@ exports.deleteClassroom = async (req, res) => {
         res.status(400).json({ message: 'Error deleting classroom', error: error.message });
     }
 };
-
+// Get all classrooms
+exports.getAllClassrooms = async (req, res) => {
+    try {
+        const classrooms = await Classroom.find();
+        res.status(200).json({ classrooms });
+    } catch (error) {
+        res.status(400).json({ message: 'Error fetching classrooms', error: error.message });
+    }
+};
 // Get all booked dates for a classroom
 exports.getAllBookedDates = async (req, res) => {
     try {

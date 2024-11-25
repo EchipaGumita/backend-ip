@@ -20,7 +20,7 @@ router.delete('/:examId', examController.deleteExam);
 
 // Get all exams
 router.get('/', examController.getAllExams);
-
+router.get('/:examId', examController.getExamById);
 // Get exams by specific criteria (e.g., faculty, group, date)
 router.get('/search', examController.getExamsByCriteria);
 

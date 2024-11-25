@@ -13,7 +13,15 @@ exports.createProfessor = async (req, res) => {
         res.status(400).json({ message: 'Error creating professor', error: error.message });
     }
 };
-
+// get all professors
+exports.GetProfessors = async (req, res) => {
+    try {
+        const professors = await Professor.find();
+        res.status(200).json({ professors });
+    } catch (error) {
+        res.status(400).json({ message: 'Error fetching professors', error: error.message });
+    }
+};
 // Update an existing professor
 exports.updateProfessor = async (req, res) => {
     try {
