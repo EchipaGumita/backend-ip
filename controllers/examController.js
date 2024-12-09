@@ -11,7 +11,7 @@ const Group = require('../models/group');
 exports.createExam = async (req, res) => {
     try {
         const { subject, mainProfessor, secondaryProfessor, faculty, group, date, hour, duration, classroom } = req.body;
-
+        console.log("Creating exam with data:", req.body);
         // Check if professors exist
         const mainProf = await Professor.findById(mainProfessor);
         if (!mainProf) return res.status(404).json({ message: 'Main professor not found' });
@@ -25,9 +25,17 @@ exports.createExam = async (req, res) => {
 
         // Convert the provided hour and date into a start and end time
         const startTime = moment(date).set({
-            hour: parseInt(hour.split(':')[0]),
-            minute: parseInt(hour.split(':')[1].split(' ')[0]),
+            hour: parseInt(hour.split(':')[0], 10),
+            minute: parseInt(hour.split(':')[1], 10),
         });
+        
+        // Validate the startTime to ensure it was set correctly
+        if (!startTime.isValid()) {
+            throw new Error('Invalid date or time format');
+        }
+        
+        // Confirm the format of `startTime`
+        console.log("Start time:", startTime.format('YYYY-MM-DD HH:mm:ss'));
 
         const endTime = moment(startTime).add(duration, 'minutes');
 
@@ -104,10 +112,25 @@ exports.deleteExam = async (req, res) => {
     try {
         const { examId } = req.params;
 
-        const deletedExam = await Exam.findByIdAndDelete(examId);
-        if (!deletedExam) return res.status(404).json({ message: 'Exam not found' });
+        // Find the exam to get the classroom and time details
+        const exam = await Exam.findById(examId);
+        if (!exam) return res.status(404).json({ message: 'Exam not found' });
 
-        res.status(200).json({ message: 'Exam deleted successfully' });
+        // Find the classroom and remove the booked slot
+        const classroom = await Classroom.findById(exam.classroom);
+        if (classroom) {
+            classroom.booked_slots = classroom.booked_slots.filter(slot => {
+                return !(moment(slot.date).isSame(exam.date, 'day') &&
+                         slot.startTime === exam.hour &&
+                         moment(slot.endTime, 'HH:mm').isSame(moment(exam.date).add(exam.duration, 'minutes'), 'HH:mm'));
+            });
+            await classroom.save();
+        }
+
+        // Delete the exam
+        await Exam.findByIdAndDelete(examId);
+
+        res.status(200).json({ message: 'Exam and booked slot deleted successfully' });
     } catch (error) {
         res.status(400).json({ message: 'Error deleting exam', error: error.message });
     }
