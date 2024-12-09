@@ -77,24 +77,29 @@ exports.getStudentByUniqueId = async (req, res) => {
 exports.updateStudentPassword = async (req, res) => {
     try {
         const uniqueId = req.params.uniqueId;
-        const { password } = req.body;
+        const { currentPassword, newPassword } = req.body; // Ensure currentPassword and newPassword are included
 
-        if (!password) {
-            return res.status(400).json({ message: 'Password is required' });
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: 'Both current and new passwords are required' });
         }
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        const student = await Student.findOne({ uniqueId });
 
-        const updatedStudent = await Student.findOneAndUpdate(
-            { uniqueId },
-            { password: hashedPassword },
-            { new: true }
-        );
-
-        if (!updatedStudent) {
+        if (!student) {
             return res.status(404).json({ message: 'Student not found' });
         }
+
+        // Compare current password
+        const isMatch = await student.comparePassword(currentPassword);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Current password is incorrect' });
+        }
+
+        // Hash and update the new password
+        const salt = await bcrypt.genSalt(10);
+        student.password = await bcrypt.hash(newPassword, salt);
+        await student.save();
+
         res.status(200).json({ message: 'Password updated successfully' });
     } catch (error) {
         res.status(400).json({ message: 'Error updating password', error: error.message });
