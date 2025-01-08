@@ -13,19 +13,33 @@ exports.createSubGroup = async (req, res) => {
 
 exports.addStudentsToSubGroup = async (req, res) => {
     try {
-        const { subGroupId, studentUniqueIds } = req.body;
+        console.log('Incoming request body:', req.body);
+
+        // Adjust keys to match the frontend payload
+        const subGroupId = req.body.subgroupId || req.body.subGroupId;
+        const studentUniqueIds = req.body.studentUniqueIds || [req.body.uniqueId];
+
+        console.log('SubGroup ID:', subGroupId);
+        console.log('Student Unique IDs:', studentUniqueIds);
+
         const subGroup = await SubGroup.findById(subGroupId);
-        
+
         if (!subGroup) {
+            console.log('SubGroup not found for ID:', subGroupId);
             return res.status(404).json({ message: 'SubGroup not found' });
         }
 
+        console.log('SubGroup found:', subGroup);
+
         // Filter out students who are already in the subgroup
-        const newStudents = studentUniqueIds.filter(studentUniqueId => 
+        const newStudents = studentUniqueIds.filter(studentUniqueId =>
             !subGroup.students.includes(studentUniqueId)
         );
 
+        console.log('New Students to add:', newStudents);
+
         if (newStudents.length === 0) {
+            console.log('All students are already in the SubGroup');
             return res.status(400).json({ message: 'All students are already in the SubGroup' });
         }
 
@@ -33,11 +47,15 @@ exports.addStudentsToSubGroup = async (req, res) => {
         subGroup.students.push(...newStudents);
         await subGroup.save();
 
+        console.log('Updated SubGroup:', subGroup);
+
         res.status(200).json({ message: 'Students added to SubGroup', subGroup });
     } catch (error) {
+        console.error('Error in addStudentsToSubGroup:', error);
         res.status(400).json({ message: 'Error adding students', error: error.message });
     }
 };
+
 
 
 exports.getAllSubGroups = async (req, res) => {
