@@ -76,35 +76,60 @@ exports.getStudentByUniqueId = async (req, res) => {
 // Update the password of a student
 exports.updateStudentPassword = async (req, res) => {
     try {
-        const uniqueId = req.params.uniqueId;
-        const { currentPassword, newPassword } = req.body; // Ensure currentPassword and newPassword are included
+        const { identifier } = req.params;  // Get the identifier (email or uniqueId) from the route params
+        const { currentPassword, newPassword } = req.body;
 
         if (!currentPassword || !newPassword) {
             return res.status(400).json({ message: 'Both current and new passwords are required' });
         }
 
-        const student = await Student.findOne({ uniqueId });
+        // Log the identifier for debugging purposes
+        console.log('Received identifier:', identifier);
+
+        // Check if the identifier is an email or uniqueId
+        let student;
+        if (identifier.includes('@')) {
+            // It's an email, so search by email
+            student = await Student.findOne({ 
+                email: { $regex: new RegExp(`^${decodeURIComponent(identifier).trim()}$`, 'i') }
+            });
+        } else {
+            // Otherwise, treat it as uniqueId
+            student = await Student.findOne({ uniqueId: identifier.trim() });
+        }
 
         if (!student) {
             return res.status(404).json({ message: 'Student not found' });
         }
 
+        // Log student information for debugging (excluding sensitive data)
+        console.log('Student found:', { uniqueId: student.uniqueId, email: student.email });
+
         // Compare current password
         const isMatch = await student.comparePassword(currentPassword);
+        console.log('Password match:', isMatch);  // Log if password comparison was successful
+        
         if (!isMatch) {
             return res.status(401).json({ message: 'Current password is incorrect' });
         }
 
         // Hash and update the new password
         const salt = await bcrypt.genSalt(10);
-        student.password = await bcrypt.hash(newPassword, salt);
+        const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+        
+        // Log new password for debugging (ensure sensitive data is not exposed in production)
+        console.log('New password hash:', hashedNewPassword); 
+
+        student.password = hashedNewPassword;
         await student.save();
 
         res.status(200).json({ message: 'Password updated successfully' });
     } catch (error) {
+        console.error('Error updating password:', error);
         res.status(400).json({ message: 'Error updating password', error: error.message });
     }
 };
+
 
 
 // Find students by a specific characteristic (e.g., faculty, major, year)

@@ -140,7 +140,7 @@ exports.handleExamRequest = async (req, res) => {
 // Get all exam requests
 exports.getAllExamRequests = async (req, res) => {
     try {
-        const requests = await ExamRequest.find().populate('classroom').populate('mainProfessor').populate('group');
+        const requests = await ExamRequest.find().populate('classroom').populate('mainProfessor').populate('secondaryProfessor').populate('group');
         res.status(200).json({ requests });
     } catch (error) {
         res.status(400).json({ message: 'Error fetching exam requests', error: error.message });

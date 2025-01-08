@@ -22,19 +22,31 @@ exports.login = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Log to check if user is found
+    console.log('User found:', user);
+
     // Compare the provided password with the stored password
     const isMatch = await user.comparePassword(password);
 
+    // Log to check if password match works
+    console.log('Password match:', isMatch);
+
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid password' });
+      return res.status(401).json({ message: 'Invalid password' });
     }
 
     // Generate JWT token
     const token = generateJWT(user.uniqueId);
 
+    // Log token generation
+    console.log('Generated token:', token);
+
+    // Set token expiration to 10 days (in milliseconds)
+    const expiresAt = Date.now() + 10 * 24 * 60 * 60 * 1000; // 10 days in milliseconds
+
     // Update the user's JWT token and expiration time in the DB
     user.jwtToken = token;
-    user.expiresAt = Date.now() + 3600000; // 1 hour expiration
+    user.expiresAt = expiresAt;
     await user.save();
 
     // Respond with the token and user type (student or professor)
