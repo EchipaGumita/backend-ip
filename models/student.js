@@ -13,7 +13,7 @@ const studentSchema = new mongoose.Schema({
     },
     password: { type: String, required: true },
     year: { type: Number, required: true },
-    faculty: { type: String, required: true, enum: ['calculatoare', 'esm', 'automatica'] },
+    faculty: { type: String, required: true, enum: ['c', 'esm', 'aia','escca','ea','etti','me','rst','se'] },
     major: { type: String, required: true },
     gender: { type: String, required: true, enum: ['male', 'female'] },
     uniqueId: { type: String, unique: true }
