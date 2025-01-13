@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const path = require('path');
 const cors = require('cors');
+require('./middleware/cronJobs.js'); // Run the cron jobs
 require('dotenv').config();
 
 const studentRoutes = require('./routes/studentRoutes');
