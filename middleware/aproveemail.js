@@ -1,5 +1,5 @@
-// aproveemail.js
 const nodemailer = require('nodemailer');
+const moment = require('moment');
 
 // 1) Configure Nodemailer
 const transporter = nodemailer.createTransport({
@@ -29,15 +29,21 @@ const sendEmail = async (recipient, subject, message) => {
   }
 };
 
-// 3) If you still want a specialized "approval email" function:
+// 3) Specialized "approval email" function with classroom building info
 const sendApprovalEmail = async (studentEmail, examDetails) => {
+  // Format the date and time explicitly to avoid timezone issues
+  const formattedDate = moment(examDetails.date).format('YYYY-MM-DD'); // Format date
+  const formattedTime = moment(examDetails.hour, 'HH:mm').format('HH:mm'); // Ensure correct time formatting
+
+  // Include classroom and building details
+
   const messageBody = `
 Salut,
 
 Examenul la materia: ${examDetails.subject}
-Data examen: ${examDetails.date}
-Ora examen: ${examDetails.hour}
-Sala: ${examDetails.classroom}
+Data examen: ${formattedDate}
+Ora examen: ${formattedTime}
+Locație: ${examDetails.location}
 Profesor principal: ${examDetails.mainProfessor}
 Profesor secundar: ${examDetails.secondaryProfessor}
 Facultate: ${examDetails.faculty}

@@ -1,12 +1,11 @@
 const Exam = require('../models/exam');
-
 const moment = require('moment');
 const Professor = require('../models/professor');
 const Classroom = require('../models/classroom');
 const Student = require('../models/student');
 const SubGroup = require('../models/subGroup'); // Adjust path if necessary
 const Group = require('../models/group');
-
+const examRequest = require('../models/examRequest');
 // Create a new exam
 exports.createExam = async (req, res) => {
     try {
@@ -75,11 +74,86 @@ exports.createExam = async (req, res) => {
         await exam.save();
 
         res.status(201).json({ message: 'Exam created and classroom booked successfully', exam });
+        
     } catch (error) {
+      
         res.status(400).json({ message: 'Error creating exam', error: error.message });
     }
 };
 
+exports.getUpcomingExams = async (req, res) => {
+    try {
+      const { limit = 5 } = req.query; // Allow setting a limit (default to 5)
+  
+      // Get the current date and time
+      const now = moment().toDate();
+  
+      // Query for exams scheduled after the current time, sorted by date and hour
+      const exams = await Exam.find({ date: { $gte: now } })
+        .sort({ date: 1, hour: 1 }) // Sort by date and time
+        .limit(parseInt(limit)) // Limit the number of results
+        .populate('mainProfessor secondaryProfessor group classroom'); // Populate references for detailed information
+  
+      // If no exams are found
+      if (!exams || exams.length === 0) {
+        return res.status(404).json({ message: 'No upcoming exams found' });
+      }
+  
+      // Return the upcoming exams
+      res.status(200).json({ exams });
+    } catch (error) {
+      console.error('Error fetching upcoming exams:', error);
+      res.status(500).json({ message: 'Error fetching upcoming exams', error: error.message });
+    }
+  };
+
+  //get KPIs
+  exports.getKPIs = async (req, res) => {
+    try {
+      // Total exams scheduled
+      const totalExams = await Exam.countDocuments();
+  
+      // Exams today
+      const todayStart = moment().startOf('day').toDate();
+      const todayEnd = moment().endOf('day').toDate();
+      const examsToday = await Exam.countDocuments({
+        date: { $gte: todayStart, $lte: todayEnd },
+      });
+  
+      // Exams this week
+      const weekStart = moment().startOf('week').toDate();
+      const weekEnd = moment().endOf('week').toDate();
+      const examsThisWeek = await Exam.countDocuments({
+        date: { $gte: weekStart, $lte: weekEnd },
+      });
+  
+      // Average classroom utilization
+      const classrooms = await Classroom.find();
+      let totalUtilization = 0;
+      classrooms.forEach((classroom) => {
+        totalUtilization += classroom.booked_slots.length;
+      });
+      const averageUtilization =
+        classrooms.length > 0
+          ? (totalUtilization / classrooms.length).toFixed(2)
+          : 0;
+  
+      // Pending exam requests
+      const pendingRequests = await examRequest.countDocuments({ status: 'pending' });
+  
+      // Return all KPIs
+      res.status(200).json({
+        totalExams,
+        examsToday,
+        examsThisWeek,
+        averageUtilization,
+        pendingRequests,
+      });
+    } catch (error) {
+      console.error('Error fetching KPIs:', error);
+      res.status(500).json({ message: 'Error fetching KPIs', error: error.message });
+    }
+  };
 // Edit an existing exam
 exports.updateExam = async (req, res) => {
     try {
@@ -129,9 +203,10 @@ exports.deleteExam = async (req, res) => {
 
         // Delete the exam
         await Exam.findByIdAndDelete(examId);
-
+      
         res.status(200).json({ message: 'Exam and booked slot deleted successfully' });
     } catch (error) {
+       
         res.status(400).json({ message: 'Error deleting exam', error: error.message });
     }
 };

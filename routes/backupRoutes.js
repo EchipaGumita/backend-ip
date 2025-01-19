@@ -23,6 +23,7 @@ router.post('/', (req, res) => {
   exec(command, (error, stdout, stderr) => {
     if (error) {
       console.error('Backup failed:', error.message);
+
       return res.status(500).json({ message: 'Backup failed', error: error.message });
     }
     console.log('Backup successful:', backupFile);

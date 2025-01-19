@@ -10,8 +10,9 @@ const SubGroup = require('../models/subGroup'); // Adjust path if necessary
 const Group = require('../models/group');
 const Exam = require('../models/exam');
 // Create a new exam
+router.get('/upcoming', examController.getUpcomingExams);
 router.post('/', examController.createExam);
-
+router.get('/kpis', examController.getKPIs);
 // Edit an existing exam
 router.put('/:examId', examController.updateExam);
 
@@ -32,7 +33,6 @@ router.get('/subgroup/:subgroupId/exams', examController.getSubgroupExams);
 
 // Get exams for a group
 router.get('/group/:groupId/exams', examController.getGroupExams);
-
 router.get('/:studentUniqueId/pdf', async (req, res) => {
     try {
         const { studentUniqueId } = req.params;

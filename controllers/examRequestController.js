@@ -152,7 +152,7 @@ exports.handleExamRequest = async (req, res) => {
           hour,
           duration: examDuration,
           faculty: request.faculty,
-          classroom: classroom.name || '', 
+          location: `${classroom.building || ''} ${classroom.name || ''}`.trim(), // Combine classroom and building
           mainProfessor: mainProfessorDoc
             ? `${mainProfessorDoc.firstName} ${mainProfessorDoc.lastName}`
             : 'N/A',
