@@ -5,7 +5,7 @@ const path = require('path');
 const cors = require('cors');
 require('./middleware/cronJobs.js'); // Run the cron jobs
 require('dotenv').config();
-
+const app = express();
 const studentRoutes = require('./routes/studentRoutes');
 const subgroupRoutes = require('./routes/subGroupRoutes');
 const groupRoutes = require('./routes/groupRoutes'); 
@@ -14,7 +14,8 @@ const authRoutes = require('./routes/authRoutes');
 const classroomRoutes = require('./routes/classroomRoutes');
 const examRoutes = require('./routes/examRoutes');
 const examRequestRoutes = require('./routes/examRequestRoutes');
-const app = express();
+const analyticsRoutes = require('./routes/analyticsRoutes.js');
+const backupRoutes = require('./routes/backupRoutes'); // Add this line
 app.use(cors({
     origin: 'http://localhost:5173', // Allow requests from the frontend
     methods: 'GET, POST, PUT, DELETE', // Allow specific methods
@@ -45,6 +46,8 @@ app.use('/api/auth', authRoutes); // Only the auth routes
 app.use('/api/classroom', classroomRoutes); // Only the classroom routes
 app.use('/api/exam', examRoutes); // Only the exam routes
 app.use('/api/exam-request', examRequestRoutes); // Only the exam request routes
+app.use('/api/analytics', analyticsRoutes); // Only the analytics routes
+app.use('/api/backup', backupRoutes);
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
